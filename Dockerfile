@@ -8,7 +8,6 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 COPY ./skincare-whatsapp-client/package*.json ./
-COPY ./skincare-whatsapp-client/prisma ./prisma/
 
 RUN npm install && \
     npm cache clean --force
@@ -17,7 +16,6 @@ COPY ./skincare-whatsapp-client ./
 
 ENV DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy"
 
-RUN npx prisma generate
 
 RUN npm run build
 
@@ -52,8 +50,7 @@ RUN npm install --production && \
     npm cache clean --force
 
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+# Prisma removed: no prisma files copied or generated.
 
 RUN mkdir -p /app/logs /app/.wwebjs_auth /app/.wwebjs_cache && \
     chown -R nodejs:nodejs /app

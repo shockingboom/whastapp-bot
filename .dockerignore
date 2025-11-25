@@ -1,0 +1,43 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Development files
+*.md
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Build files (will be rebuilt in Docker)
+dist
+
+# Logs
+logs
+*.log
+
+# Test files
+test
+tests
+*.test.ts
+*.spec.ts
+
+# Documentation
+docs
+
+# Development tools (keep tsconfig.json for build)
+.eslintrc*
+.prettierrc*
+nodemon.json
+
+# OS files
+.DS_Store
+Thumbs.db

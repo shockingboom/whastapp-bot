@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+coverage
+.env
+*.log
+.wwebjs_auth
+.wwebjs_cache
+package-lock.json

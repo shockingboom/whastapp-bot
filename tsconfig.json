@@ -42,5 +42,5 @@
     "skipLibCheck": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "prisma.config.ts"]
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }
