@@ -33,7 +33,22 @@ export class MessageController {
       }
 
       const formattedNumber = PhoneUtil.formatPhoneNumber(number);
-      const result = await whatsappService.sendMessage(formattedNumber, message);
+
+      if (!whatsappService.isClientReady()) {
+        const response: ApiResponse = {
+          success: false,
+          message: "WhatsApp client is not ready. Try again later.",
+        };
+        res.status(503).json(response);
+        return;
+      }
+
+      const sendPromise = whatsappService.sendMessage(formattedNumber, message);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("send_timeout")), 15000)
+      );
+
+      const result = await Promise.race([sendPromise, timeoutPromise]);
 
       Logger.info("Message sent successfully", {
         number: formattedNumber,
@@ -50,7 +65,18 @@ export class MessageController {
     } catch (error) {
       Logger.error("Error sending message", error);
 
+      // Map timeout to 504, otherwise 500
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage === "send_timeout") {
+        const response: ApiResponse = {
+          success: false,
+          message: "Message sending timed out",
+          error: errorMessage,
+        };
+        res.status(504).json(response);
+        return;
+      }
+
       const response: ApiResponse = {
         success: false,
         message: "Failed to send message",
