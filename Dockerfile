@@ -7,12 +7,12 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-COPY ./skincare-whatsapp-client/package*.json ./
+COPY ./package*.json ./
 
 RUN npm install && \
     npm cache clean --force
 
-COPY ./skincare-whatsapp-client ./
+COPY . .
 
 ENV DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy"
 
@@ -44,7 +44,7 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-COPY ./skincare-whatsapp-client/package*.json ./
+COPY ./package*.json ./
 
 RUN npm install --production && \
     npm cache clean --force
@@ -57,7 +57,7 @@ RUN mkdir -p /app/logs /app/.wwebjs_auth /app/.wwebjs_cache && \
 
 USER nodejs
 
-EXPOSE 5555
+EXPOSE 6666
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:5555/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
@@ -66,3 +66,4 @@ ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 # Start application
 CMD ["node", "dist/index.js"]
+
