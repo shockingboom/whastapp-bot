@@ -3,6 +3,7 @@ import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import { config } from "../config";
 import { MessageResult } from "../types";
 import { Logger } from "../utils";
+import fetch from "node-fetch";
 
 export class WhatsAppService {
   private static instance: WhatsAppService;
@@ -16,6 +17,13 @@ export class WhatsAppService {
     });
 
     this.setupEventHandlers();
+
+    // 🚀 Keep Railway alive
+    setInterval(() => {
+      if (config.serverUrl) {
+        fetch(`${config.serverUrl}/ping`).catch(() => {});
+      }
+    }, 1000 * 60 * 4); // every 4 minutes
   }
 
   public static getInstance(): WhatsAppService {
@@ -44,10 +52,40 @@ export class WhatsAppService {
       await this.handleIncomingMessage(message);
     });
 
-    this.client.on("disconnected", (reason: string) => {
+    this.client.on("disconnected", async (reason: string) => {
       Logger.warn("WhatsApp client disconnected", { reason });
       this.isReady = false;
+
+      Logger.info("Attempting to auto reconnect...");
+      await this.reconnect();
     });
+
+    // 🛡 Prevent WhatsApp session freeze
+    setInterval(async () => {
+      if (this.isReady) {
+        try {
+          await this.client.sendPresenceAvailable();
+        } catch (_) {}
+      }
+    }, 1000 * 60 * 2); // every 2 mins
+  }
+
+  private async reconnect(): Promise<void> {
+    try {
+      await this.client.destroy();
+    } catch (_) {}
+
+    this.client = new Client({
+      authStrategy: new LocalAuth(),
+      puppeteer: config.whatsapp.puppeteerOptions,
+    });
+
+    this.setupEventHandlers();
+
+    setTimeout(async () => {
+      Logger.info("Reinitializing WhatsApp client...");
+      await this.initialize();
+    }, 3000);
   }
 
   private async handleIncomingMessage(message: Message): Promise<void> {
@@ -73,6 +111,7 @@ export class WhatsAppService {
         message,
       };
     } catch (error) {
+      Logger.error("Error sending message", error);
       throw error;
     }
   }
