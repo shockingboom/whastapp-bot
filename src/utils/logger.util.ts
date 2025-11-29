@@ -1,9 +1,12 @@
+// File: src/utils/logger.util.ts
+// Deskripsi: Wrapper untuk winston logger. Menyediakan format keluaran
+// yang ramah pembacaan di console dan format JSON untuk file log.
 import "colors";
 import winston from "winston";
 
 const { combine, timestamp, printf, colorize, align } = winston.format;
 
-// Custom format for console output with colors
+// Format custom untuk keluaran console (berwarna)
 const consoleFormat = printf((info) => {
   const { timestamp, level, message, ...metadata } = info;
   const ts = new Date(timestamp as string).toLocaleString("id-ID", {
@@ -18,7 +21,7 @@ const consoleFormat = printf((info) => {
 
   let msg = `[${ts}] ${level}: ${message}`;
 
-  // Add metadata if exists
+  // Tambahkan metadata bila ada
   if (Object.keys(metadata).length > 0) {
     msg += ` ${JSON.stringify(metadata)}`;
   }
@@ -26,7 +29,7 @@ const consoleFormat = printf((info) => {
   return msg;
 });
 
-// Custom format for file output
+// Format custom untuk file log (JSON)
 const fileFormat = printf((info) => {
   const { timestamp, level, message, ...metadata } = info;
   const logEntry: Record<string, unknown> = {
@@ -35,7 +38,7 @@ const fileFormat = printf((info) => {
     message,
   };
 
-  // Add metadata if exists
+  // Tambahkan metadata bila ada
   if (Object.keys(metadata).length > 0) {
     logEntry["metadata"] = metadata;
   }
@@ -43,7 +46,7 @@ const fileFormat = printf((info) => {
   return JSON.stringify(logEntry);
 });
 
-// Create logger instance
+// Buat instance logger
 export const logger = winston.createLogger({
   level: process.env["LOG_LEVEL"] || "info",
   format: combine(
@@ -53,17 +56,17 @@ export const logger = winston.createLogger({
     align()
   ),
   transports: [
-    // Console transport with colors
+    // Console transport berwarna
     new winston.transports.Console({
       format: combine(colorize({ all: true }), consoleFormat),
     }),
-    // File transport for errors
+    // File transport untuk error
     new winston.transports.File({
       filename: "logs/error.log",
       level: "error",
       format: fileFormat,
     }),
-    // File transport for all logs
+    // File transport untuk semua log
     new winston.transports.File({
       filename: "logs/combined.log",
       format: fileFormat,
@@ -73,7 +76,7 @@ export const logger = winston.createLogger({
   rejectionHandlers: [new winston.transports.File({ filename: "logs/rejections.log" })],
 });
 
-// Helper methods for easier logging
+// Kelas helper untuk memudahkan logging di kode lain
 export class Logger {
   static info(message: string, metadata?: Record<string, unknown>): void {
     logger.info(message, metadata);

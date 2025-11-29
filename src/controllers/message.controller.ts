@@ -3,16 +3,27 @@ import { whatsappService } from "../services";
 import { ApiResponse, MessageResult, SendMessageRequest } from "../types";
 import { Logger, PhoneUtil } from "../utils";
 
+/**
+ * Controller untuk endpoint pesan.
+ * Tanggung jawab:
+ * - Validasi payload
+ * - Memformat nomor telepon
+ * - Memanggil service untuk mengirim pesan
+ * - Memetakan error ke HTTP status yang sesuai
+ */
 export class MessageController {
   /**
-   * Send WhatsApp message
    * POST /api/send-message
+   * Mengirim pesan WhatsApp ke nomor yang diberikan.
+   * Validasi yang dilakukan:
+   * - number dan message wajib
+   * - number divalidasi sebagai nomor Indonesia
    */
   public async sendMessage(req: Request, res: Response): Promise<void> {
     try {
       const { number, message } = req.body as SendMessageRequest;
 
-      // Validate input
+      // Validasi input
       if (!number || !message) {
         const response: ApiResponse = {
           success: false,
@@ -22,7 +33,7 @@ export class MessageController {
         return;
       }
 
-      // Validate phone number
+      // Validasi nomor telepon (Indonesia)
       if (!PhoneUtil.isValidIndonesianNumber(number)) {
         const response: ApiResponse = {
           success: false,
@@ -32,8 +43,10 @@ export class MessageController {
         return;
       }
 
+      // Format nomor ke bentuk internasional (62...)
       const formattedNumber = PhoneUtil.formatPhoneNumber(number);
 
+      // Pastikan client WhatsApp siap
       if (!whatsappService.isClientReady()) {
         const response: ApiResponse = {
           success: false,
@@ -43,6 +56,7 @@ export class MessageController {
         return;
       }
 
+      // Kirim pesan dengan timeout untuk mencegah hang
       const sendPromise = whatsappService.sendMessage(formattedNumber, message);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("send_timeout")), 15000)
@@ -65,7 +79,7 @@ export class MessageController {
     } catch (error) {
       Logger.error("Error sending message", error);
 
-      // Map timeout to 504, otherwise 500
+      // Map timeout ke 504, selain itu 500
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       if (errorMessage === "send_timeout") {
         const response: ApiResponse = {
